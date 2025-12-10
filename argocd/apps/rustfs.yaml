@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://github.com/rustfs/helm
     targetRevision: HEAD
-    path: charts/rustfs
+    chart: rustfs
   destination:
     server: https://kubernetes.default.svc
     namespace: rustfs
