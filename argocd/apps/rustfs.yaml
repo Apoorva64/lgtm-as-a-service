@@ -6,9 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: oci://registry-1.docker.io/cloudpirates
-    chart: rustfs
-    targetRevision: "0.1.0"
+    repoURL: oci://registry-1.docker.io/cloudpirates/rustfs
+    targetRevision: "0.1.1"
   destination:
     server: https://kubernetes.default.svc
     namespace: rustfs
