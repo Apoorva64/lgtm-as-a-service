@@ -1,0 +1,27 @@
+apiVersion: telemetry.yourorg.io/v1alpha1
+kind: TelemetryPipeline
+metadata:
+  name: demo-pipeline
+spec:
+  tenant: demo
+  namespace: observability
+  signals:
+    traces: true
+    logs: true
+    metrics: true
+  exporters:
+    tempoEndpoint: https://tempo.example.com
+    lokiEndpoint: https://loki.example.com/loki/api/v1/push
+    mimirEndpoint: https://mimir.example.com/api/v1/push
+  auth:
+    tempoHeader: Bearer tempo-token
+    lokiTenant: demo
+    lokiHeader: Bearer loki-token
+    mimirHeader: Bearer mimir-token
+  storage:
+    region: us-east-1
+    tempoBucketName: demo-tempo-bucket
+    lokiBucketName: demo-loki-bucket
+    mimirBucketName: demo-mimir-bucket
+  ingress:
+    public: false

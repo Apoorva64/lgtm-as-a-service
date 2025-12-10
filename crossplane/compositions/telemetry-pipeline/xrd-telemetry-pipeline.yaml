@@ -1,0 +1,115 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: telemetrypipelines.telemetry.yourorg.io
+spec:
+  group: telemetry.yourorg.io
+  names:
+    kind: XTelemetryPipeline
+    plural: telemetrypipelines
+  claimNames:
+    kind: TelemetryPipeline
+    plural: telemetrypipelines
+  connectionSecretKeys:
+    - endpoint
+    - grpcPort
+    - httpPort
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                mode:
+                  type: object
+                  properties:
+                    monolithic:
+                      type: boolean
+                      default: true
+                tenant:
+                  type: string
+                namespace:
+                  type: string
+                  description: Kubernetes namespace to place the collector and service.
+                signals:
+                  type: object
+                  properties:
+                    traces:
+                      type: boolean
+                      default: true
+                    logs:
+                      type: boolean
+                      default: true
+                    metrics:
+                      type: boolean
+                      default: true
+                exporters:
+                  type: object
+                  properties:
+                    tempoEndpoint:
+                      type: string
+                    lokiEndpoint:
+                      type: string
+                    mimirEndpoint:
+                      type: string
+                  required:
+                    - tempoEndpoint
+                    - lokiEndpoint
+                    - mimirEndpoint
+                auth:
+                  type: object
+                  properties:
+                    tempoHeader:
+                      type: string
+                      description: Authorization header value for Tempo exporter.
+                    lokiTenant:
+                      type: string
+                      description: Loki tenant header.
+                    lokiHeader:
+                      type: string
+                      description: Optional Loki auth header.
+                    mimirHeader:
+                      type: string
+                      description: Optional Mimir auth header.
+                storage:
+                  type: object
+                  properties:
+                    tempoBucketName:
+                      type: string
+                    lokiBucketName:
+                      type: string
+                    mimirBucketName:
+                      type: string
+                    region:
+                      type: string
+                    endpoint:
+                      type: string
+                ingress:
+                  type: object
+                  properties:
+                    public:
+                      type: boolean
+                      default: false
+                    host:
+                      type: string
+              required:
+                - tenant
+                - namespace
+                - exporters
+              additionalProperties: false
+            status:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+                grpcPort:
+                  type: integer
+                httpPort:
+                  type: integer
+          required:
+            - spec
