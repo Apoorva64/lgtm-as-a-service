@@ -8,6 +8,7 @@ spec:
   source:
     repoURL: oci://registry-1.docker.io/cloudpirates/rustfs
     targetRevision: "0.1.1"
+    path: .
   destination:
     server: https://kubernetes.default.svc
     namespace: rustfs
