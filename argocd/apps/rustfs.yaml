@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://seaweedfs.github.io/seaweedfs/
-    chart: seaweedfs
-    targetRevision: "3.64.0"
+    repoURL: https://seaweedfs.github.io/seaweedfs/helm
+    chart: seaweedfs 
+    targetRevision: "4.0.402"
   destination:
     server: https://kubernetes.default.svc
     namespace: seaweedfs
