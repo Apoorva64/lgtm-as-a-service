@@ -37,17 +37,18 @@ spec:
                         namespace: {{ .observed.composite.resource.spec.namespace }}
                         releaseName: tempo-{{ .observed.composite.resource.spec.tenant }}
                         values:
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                          tempo:
-                            storage:
-                              trace:
-                                backend: s3
-                                s3:
-                                  bucket: {{ .observed.composite.resource.spec.storage.tempoBucketName }}
-                                  region: {{ .observed.composite.resource.spec.storage.region }}
-                                  {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                  endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                  {{- end }}
+                          {{- $tempoOverride := default dict .observed.composite.resource.spec.overrides.tempoValues }}
+                          {{- $tempoMode := "distributed" }}
+                          {{- if .observed.composite.resource.spec.mode.monolithic }}
+                          {{- $tempoMode = "monolithic" }}
+                          {{- end }}
+                          {{- $tempoS3 := dict "bucket" .observed.composite.resource.spec.storage.tempoBucketName "region" .observed.composite.resource.spec.storage.region }}
+                          {{- if .observed.composite.resource.spec.storage.endpoint }}
+                          {{- $tempoS3 = merge $tempoS3 (dict "endpoint" .observed.composite.resource.spec.storage.endpoint) }}
+                          {{- end }}
+                          {{- $tempoBase := dict "deploymentMode" $tempoMode "tempo" (dict "storage" (dict "trace" (dict "backend" "s3" "s3" $tempoS3))) }}
+                          {{- $tempoValues := merge $tempoBase $tempoOverride }}
+                          {{- toYaml $tempoValues | nindent 26 }}
                   readinessChecks:
                     - type: None
                 - name: loki
@@ -65,19 +66,19 @@ spec:
                         namespace: {{ .observed.composite.resource.spec.namespace }}
                         releaseName: loki-{{ .observed.composite.resource.spec.tenant }}
                         values:
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}SingleBinary{{ else }}SimpleScalable{{ end }}
-                          loki:
-                            storage:
-                              type: s3
-                              bucketNames:
-                                chunks: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                                ruler: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                                admin: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                              s3:
-                                region: {{ .observed.composite.resource.spec.storage.region }}
-                                {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                {{- end }}
+                          {{- $lokiOverride := default dict .observed.composite.resource.spec.overrides.lokiValues }}
+                          {{- $lokiMode := "SimpleScalable" }}
+                          {{- if .observed.composite.resource.spec.mode.monolithic }}
+                          {{- $lokiMode = "SingleBinary" }}
+                          {{- end }}
+                          {{- $lokiS3 := dict "region" .observed.composite.resource.spec.storage.region }}
+                          {{- if .observed.composite.resource.spec.storage.endpoint }}
+                          {{- $lokiS3 = merge $lokiS3 (dict "endpoint" .observed.composite.resource.spec.storage.endpoint) }}
+                          {{- end }}
+                          {{- $lokiBuckets := dict "chunks" .observed.composite.resource.spec.storage.lokiBucketName "ruler" .observed.composite.resource.spec.storage.lokiBucketName "admin" .observed.composite.resource.spec.storage.lokiBucketName }}
+                          {{- $lokiBase := dict "deploymentMode" $lokiMode "loki" (dict "storage" (dict "type" "s3" "bucketNames" $lokiBuckets "s3" $lokiS3)) }}
+                          {{- $lokiValues := merge $lokiBase $lokiOverride }}
+                          {{- toYaml $lokiValues | nindent 26 }}
                   readinessChecks:
                     - type: None
                 - name: mimir
@@ -95,16 +96,18 @@ spec:
                         namespace: {{ .observed.composite.resource.spec.namespace }}
                         releaseName: mimir-{{ .observed.composite.resource.spec.tenant }}
                         values:
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                          mimir:
-                            storage:
-                              backend: s3
-                              s3:
-                                bucket_name: {{ .observed.composite.resource.spec.storage.mimirBucketName }}
-                                region: {{ .observed.composite.resource.spec.storage.region }}
-                                {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                {{- end }}
+                          {{- $mimirOverride := default dict .observed.composite.resource.spec.overrides.mimirValues }}
+                          {{- $mimirMode := "distributed" }}
+                          {{- if .observed.composite.resource.spec.mode.monolithic }}
+                          {{- $mimirMode = "monolithic" }}
+                          {{- end }}
+                          {{- $mimirS3 := dict "bucket_name" .observed.composite.resource.spec.storage.mimirBucketName "region" .observed.composite.resource.spec.storage.region }}
+                          {{- if .observed.composite.resource.spec.storage.endpoint }}
+                          {{- $mimirS3 = merge $mimirS3 (dict "endpoint" .observed.composite.resource.spec.storage.endpoint) }}
+                          {{- end }}
+                          {{- $mimirBase := dict "deploymentMode" $mimirMode "mimir" (dict "storage" (dict "backend" "s3" "s3" $mimirS3)) }}
+                          {{- $mimirValues := merge $mimirBase $mimirOverride }}
+                          {{- toYaml $mimirValues | nindent 26 }}
                   readinessChecks:
                     - type: None
                 - name: grafana
@@ -122,10 +125,10 @@ spec:
                         namespace: {{ .observed.composite.resource.spec.namespace }}
                         releaseName: grafana-{{ .observed.composite.resource.spec.tenant }}
                         values:
-                          adminUser: admin
-                          adminPassword: admin
-                          service:
-                            type: ClusterIP
+                          {{- $grafanaOverride := default dict .observed.composite.resource.spec.overrides.grafanaValues }}
+                          {{- $grafanaBase := dict "adminUser" "admin" "adminPassword" "admin" "service" (dict "type" "ClusterIP") }}
+                          {{- $grafanaValues := merge $grafanaBase $grafanaOverride }}
+                          {{- toYaml $grafanaValues | nindent 26 }}
                   readinessChecks:
                     - type: None
                 - name: otel-config
@@ -142,6 +145,9 @@ spec:
                             namespace: {{ .observed.composite.resource.spec.namespace }}
                           data:
                             collector.yaml: |
+                              {{- if .observed.composite.resource.spec.overrides.otelCollectorConfig }}
+                              {{ .observed.composite.resource.spec.overrides.otelCollectorConfig | nindent 30 }}
+                              {{- else }}
                               receivers:
                                 otlp:
                                   protocols:
@@ -150,30 +156,28 @@ spec:
                                     http:
                                       endpoint: 0.0.0.0:4318
                               exporters:
-                                otlphttp/tempo:
-                                  endpoint: {{ .observed.composite.resource.spec.exporters.tempoEndpoint }}
-                                  headers:
-                                    Authorization: "{{ .observed.composite.resource.spec.auth.tempoHeader }}"
+                                otlp/tempo:
+                                  endpoint: {{ printf "tempo-%s-distributor.%s.svc.cluster.local:4317" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
+                                  tls:
+                                    insecure: true
                                 loki:
-                                  endpoint: {{ .observed.composite.resource.spec.exporters.lokiEndpoint }}
-                                  headers:
-                                    X-Scope-OrgID: "{{ .observed.composite.resource.spec.auth.lokiTenant }}"
-                                    Authorization: "{{ .observed.composite.resource.spec.auth.lokiHeader }}"
+                                  endpoint: {{ printf "http://loki-%s.%s.svc.cluster.local:3100/loki/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
                                 prometheusremotewrite:
-                                  endpoint: {{ .observed.composite.resource.spec.exporters.mimirEndpoint }}
-                                  headers:
-                                    Authorization: "{{ .observed.composite.resource.spec.auth.mimirHeader }}"
+                                  endpoint: {{ printf "http://mimir-%s-distributor.%s.svc.cluster.local:8080/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
+                                  tls:
+                                    insecure: true
                               service:
                                 pipelines:
                                   traces:
                                     receivers: [otlp]
-                                    exporters: [otlphttp/tempo]
+                                    exporters: [otlp/tempo]
                                   logs:
                                     receivers: [otlp]
                                     exporters: [loki]
                                   metrics:
                                     receivers: [otlp]
                                     exporters: [prometheusremotewrite]
+                              {{- end }}
                   readinessChecks:
                     - type: None
                 - name: otel-deployment

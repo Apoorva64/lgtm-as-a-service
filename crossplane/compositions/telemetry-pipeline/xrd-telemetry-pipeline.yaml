@@ -48,34 +48,6 @@ spec:
                     metrics:
                       type: boolean
                       default: true
-                exporters:
-                  type: object
-                  properties:
-                    tempoEndpoint:
-                      type: string
-                    lokiEndpoint:
-                      type: string
-                    mimirEndpoint:
-                      type: string
-                  required:
-                    - tempoEndpoint
-                    - lokiEndpoint
-                    - mimirEndpoint
-                auth:
-                  type: object
-                  properties:
-                    tempoHeader:
-                      type: string
-                      description: Authorization header value for Tempo exporter.
-                    lokiTenant:
-                      type: string
-                      description: Loki tenant header.
-                    lokiHeader:
-                      type: string
-                      description: Optional Loki auth header.
-                    mimirHeader:
-                      type: string
-                      description: Optional Mimir auth header.
                 storage:
                   type: object
                   properties:
@@ -89,6 +61,23 @@ spec:
                       type: string
                     endpoint:
                       type: string
+                overrides:
+                  type: object
+                  properties:
+                    tempoValues:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    lokiValues:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    mimirValues:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    grafanaValues:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    otelCollectorConfig:
+                      type: string
                 ingress:
                   type: object
                   properties:
@@ -100,7 +89,6 @@ spec:
               required:
                 - tenant
                 - namespace
-                - exporters
               additionalProperties: false
             status:
               type: object
