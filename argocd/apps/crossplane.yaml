@@ -11,9 +11,6 @@ spec:
     chart: crossplane
     helm:
       releaseName: crossplane
-      values: |
-        args:
-          - "--enable-external-secret-stores"
   destination:
     server: https://kubernetes.default.svc
     namespace: crossplane-system
