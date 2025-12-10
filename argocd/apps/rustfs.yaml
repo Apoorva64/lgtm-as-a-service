@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/rustfs/helm
-    targetRevision: HEAD
+    repoURL: oci://registry-1.docker.io/cloudpirates
     chart: rustfs
+    targetRevision: "0.1.0"
   destination:
     server: https://kubernetes.default.svc
     namespace: rustfs
