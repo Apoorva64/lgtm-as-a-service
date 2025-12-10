@@ -1,17 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: seaweedfs
+  name: rustfs
   namespace: argocd
 spec:
   project: default
   source:
-    repoURL: https://seaweedfs.github.io/seaweedfs/helm
-    chart: seaweedfs 
-    targetRevision: "4.0.402"
+    repoURL: oci://registry-1.docker.io/cloudpirates/rustfs
+    path: .
+    targetRevision: "0.1.1"
+    helm:
+      values: |
+        ingress:
+          enabled: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: seaweedfs
+    namespace: rustfs
   syncPolicy:
     automated:
       prune: true
