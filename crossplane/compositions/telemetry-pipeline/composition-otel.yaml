@@ -31,14 +31,12 @@ spec:
                   name: tempo
                   repository: https://grafana.github.io/helm-charts
                   version: 1.12.6
-                namespace: {{ .observed.composite.resource.spec.namespace }}
                 values:
                   deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
                   tempo:
                     extraEnvFrom:
                       - secretRef:
                           name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                          namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
                     storage:
                       trace:
                         backend: s3
@@ -64,7 +62,6 @@ spec:
                   name: loki
                   repository: https://grafana.github.io/helm-charts
                   version: 5.40.0
-                namespace: {{ .observed.composite.resource.spec.namespace }}
                 values:
                   global:
                     extraArgs:
@@ -72,7 +69,6 @@ spec:
                     extraEnvFrom:
                       - secretRef:
                           name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                          namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
                   deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}SingleBinary{{ else }}SimpleScalable{{ end }}
                   loki:
                     storage:
@@ -102,14 +98,12 @@ spec:
                   name: mimir-distributed
                   repository: https://grafana.github.io/helm-charts
                   version: 5.3.0
-                namespace: {{ .observed.composite.resource.spec.namespace }}
                 values:
                   deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
                   mimir:
                     extraEnvFrom:
                       - secretRef:
                           name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                          namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
                     storage:
                       backend: s3
                       s3:
@@ -134,7 +128,6 @@ spec:
                   name: grafana
                   repository: https://grafana.github.io/helm-charts
                   version: 8.5.7
-                namespace: {{ .observed.composite.resource.spec.namespace }}
                 values:
                   adminUser: admin
                   adminPassword: admin
