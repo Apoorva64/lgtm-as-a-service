@@ -3,11 +3,9 @@ kind: CompositeResourceDefinition
 metadata:
   name: telemetrypipelines.telemetry.yourorg.io
 spec:
+  scope: Namespaced
   group: telemetry.yourorg.io
   names:
-    kind: TelemetryPipeline
-    plural: telemetrypipelines
-  claimNames:
     kind: TelemetryPipeline
     plural: telemetrypipelines
   connectionSecretKeys:
