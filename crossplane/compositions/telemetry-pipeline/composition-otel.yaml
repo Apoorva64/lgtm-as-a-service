@@ -35,7 +35,6 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 1.12.6
                 namespace: {{ .observed.composite.resource.spec.namespace }}
-                releaseName: tempo-{{ .observed.composite.resource.spec.tenant }}
                 values:
                   deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
                   tempo:
@@ -72,7 +71,6 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 5.40.0
                 namespace: {{ .observed.composite.resource.spec.namespace }}
-                releaseName: loki-{{ .observed.composite.resource.spec.tenant }}
                 values:
                   global:
                     extraArgs:
@@ -114,7 +112,6 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 5.3.0
                 namespace: {{ .observed.composite.resource.spec.namespace }}
-                releaseName: mimir-{{ .observed.composite.resource.spec.tenant }}
                 values:
                   deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
                   mimir:
@@ -150,7 +147,6 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 8.5.7
                 namespace: {{ .observed.composite.resource.spec.namespace }}
-                releaseName: grafana-{{ .observed.composite.resource.spec.tenant }}
                 values:
                   adminUser: admin
                   adminPassword: admin
