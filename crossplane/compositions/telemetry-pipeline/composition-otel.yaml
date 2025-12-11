@@ -3,314 +3,387 @@ kind: Composition
 metadata:
   name: telemetrypipelines-otel-deployment
 spec:
-  mode: Pipeline
   compositeTypeRef:
-    apiVersion: telemetry.yourorg.io/v1alpha1
+    apiVersion: telemetrypipelines.example.crossplane.io/v1
     kind: TelemetryPipeline
-  pipeline:
-    - step: render
-      functionRef:
-        name: function-go-templating
-      input:
-        apiVersion: template.fn.crossplane.io/v1beta1
-        kind: GoTemplate
-        source: Inline
-        inline:
-          template: |
-            apiVersion: fn.crossplane.io/v1beta1
-            kind: Output
-            spec:
-              resources:
-                - name: tempo
-                  base:
-                    apiVersion: helm.crossplane.io/v1beta1
-                    kind: Release
-                    spec:
-                      providerConfigRef:
-                        name: default
-                      forProvider:
-                        chart:
-                          name: tempo
-                          repository: https://grafana.github.io/helm-charts
-                          version: 1.12.6
-                        namespace: {{ .observed.composite.resource.spec.namespace }}
-                        releaseName: tempo-{{ .observed.composite.resource.spec.tenant }}
-                        values:
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                          tempo:
-                            extraEnvFrom:
-                              - secretRef:
-                                  name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                                  namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
-                            storage:
-                              trace:
-                                backend: s3
-                                s3:
-                                  bucket: {{ .observed.composite.resource.spec.storage.tempoBucketName }}
-                                  region: {{ .observed.composite.resource.spec.storage.region }}
-                                  access_key: ${S3_ACCESS_KEY}
-                                  secret_key: ${S3_SECRET_KEY}
-                                  {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                  endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                  {{- end }}
-                  readinessChecks:
-                    - type: None
-                - name: loki
-                  base:
-                    apiVersion: helm.crossplane.io/v1beta1
-                    kind: Release
-                    spec:
-                      providerConfigRef:
-                        name: default
-                      forProvider:
-                        chart:
-                          name: loki
-                          repository: https://grafana.github.io/helm-charts
-                          version: 5.40.0
-                        namespace: {{ .observed.composite.resource.spec.namespace }}
-                        releaseName: loki-{{ .observed.composite.resource.spec.tenant }}
-                        values:
-                          global:
-                            extraArgs:
-                              - -config.expand-env=true
-                            extraEnvFrom:
-                              - secretRef:
-                                  name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                                  namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}SingleBinary{{ else }}SimpleScalable{{ end }}
-                          loki:
-                            storage:
-                              type: s3
-                              bucketNames:
-                                chunks: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                                ruler: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                                admin: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
-                              s3:
-                                region: {{ .observed.composite.resource.spec.storage.region }}
-                                accessKeyId: ${S3_ACCESS_KEY}
-                                secretAccessKey: ${S3_SECRET_KEY}
-                                {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                {{- end }}
-                  readinessChecks:
-                    - type: None
-                - name: mimir
-                  base:
-                    apiVersion: helm.crossplane.io/v1beta1
-                    kind: Release
-                    spec:
-                      providerConfigRef:
-                        name: default
-                      forProvider:
-                        chart:
-                          name: mimir-distributed
-                          repository: https://grafana.github.io/helm-charts
-                          version: 5.3.0
-                        namespace: {{ .observed.composite.resource.spec.namespace }}
-                        releaseName: mimir-{{ .observed.composite.resource.spec.tenant }}
-                        values:
-                          deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                          mimir:
-                            extraEnvFrom:
-                              - secretRef:
-                                  name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                                  namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
-                            storage:
-                              backend: s3
-                              s3:
-                                bucket_name: {{ .observed.composite.resource.spec.storage.mimirBucketName }}
-                                region: {{ .observed.composite.resource.spec.storage.region }}
-                                access_key_id: ${S3_ACCESS_KEY}
-                                secret_access_key: ${S3_SECRET_KEY}
-                                {{- if .observed.composite.resource.spec.storage.endpoint }}
-                                endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                                {{- end }}
-                  readinessChecks:
-                    - type: None
-                - name: grafana
-                  base:
-                    apiVersion: helm.crossplane.io/v1beta1
-                    kind: Release
-                    spec:
-                      providerConfigRef:
-                        name: default
-                      forProvider:
-                        chart:
-                          name: grafana
-                          repository: https://grafana.github.io/helm-charts
-                          version: 8.5.7
-                        namespace: {{ .observed.composite.resource.spec.namespace }}
-                        releaseName: grafana-{{ .observed.composite.resource.spec.tenant }}
-                        values:
-                          adminUser: admin
-                          adminPassword: admin
-                          service:
-                            type: ClusterIP
-                  readinessChecks:
-                    - type: None
-                - name: otel-config
-                  base:
-                    apiVersion: kubernetes.crossplane.io/v1alpha2
-                    kind: Object
-                    spec:
-                      forProvider:
-                        manifest:
-                          apiVersion: v1
-                          kind: ConfigMap
-                          metadata:
-                            name: otel-collector
-                            namespace: {{ .observed.composite.resource.spec.namespace }}
-                          data:
-                            collector.yaml: |
-                              {{- if .observed.composite.resource.spec.overrides.otelCollectorConfig }}
-                              {{ .observed.composite.resource.spec.overrides.otelCollectorConfig | nindent 30 }}
-                              {{- else }}
-                              receivers:
-                                otlp:
-                                  protocols:
-                                    grpc:
-                                      endpoint: 0.0.0.0:4317
-                                    http:
-                                      endpoint: 0.0.0.0:4318
-                              exporters:
-                                otlp/tempo:
-                                  endpoint: {{ printf "tempo-%s-distributor.%s.svc.cluster.local:4317" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
-                                  tls:
-                                    insecure: true
-                                loki:
-                                  endpoint: {{ printf "http://loki-%s.%s.svc.cluster.local:3100/loki/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
-                                prometheusremotewrite:
-                                  endpoint: {{ printf "http://mimir-%s-distributor.%s.svc.cluster.local:8080/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
-                                  tls:
-                                    insecure: true
-                              service:
-                                pipelines:
-                                  traces:
-                                    receivers: [otlp]
-                                    exporters: [otlp/tempo]
-                                  logs:
-                                    receivers: [otlp]
-                                    exporters: [loki]
-                                  metrics:
-                                    receivers: [otlp]
-                                    exporters: [prometheusremotewrite]
-                              {{- end }}
-                  readinessChecks:
-                    - type: None
-                - name: otel-deployment
-                  base:
-                    apiVersion: kubernetes.crossplane.io/v1alpha2
-                    kind: Object
-                    spec:
-                      forProvider:
-                        manifest:
-                          apiVersion: apps/v1
-                          kind: Deployment
-                          metadata:
-                            name: otel-collector
-                            namespace: {{ .observed.composite.resource.spec.namespace }}
-                            labels:
-                              app: otel-collector
-                          spec:
-                            replicas: 1
-                            selector:
-                              matchLabels:
-                                app: otel-collector
-                            template:
-                              metadata:
-                                labels:
-                                  app: otel-collector
-                              spec:
-                                serviceAccountName: default
-                                containers:
-                                  - name: otel-collector
-                                    image: otel/opentelemetry-collector-contrib:0.97.0
-                                    args: ["--config=/etc/otelcol/collector.yaml"]
-                                    ports:
-                                      - name: otlp-grpc
-                                        containerPort: 4317
-                                      - name: otlp-http
-                                        containerPort: 4318
-                                    volumeMounts:
-                                      - name: config
-                                        mountPath: /etc/otelcol
-                                volumes:
-                                  - name: config
-                                    configMap:
-                                      name: otel-collector
-                  readinessChecks:
-                    - type: None
-                - name: otel-service
-                  base:
-                    apiVersion: kubernetes.crossplane.io/v1alpha2
-                    kind: Object
-                    spec:
-                      forProvider:
-                        manifest:
-                          apiVersion: v1
-                          kind: Service
-                          metadata:
-                            name: otel-collector
-                            namespace: {{ .observed.composite.resource.spec.namespace }}
-                            labels:
-                              app: otel-collector
-                          spec:
-                            type: ClusterIP
-                            selector:
-                              app: otel-collector
-                            ports:
-                              - name: otlp-grpc
-                                port: 4317
-                                targetPort: 4317
-                              - name: otlp-http
-                                port: 4318
-                                targetPort: 4318
-                  readinessChecks:
-                    - type: None
-    - step: apply-overrides
-      functionRef:
-        name: function-patch-and-transform
-      input:
-        apiVersion: fn.crossplane.io/v1beta1
-        kind: Patches
+  mode: Pipeline
+  pipeline: 
+  - step: create-deployment-and-service
+    functionRef:
+      name: crossplane-contrib-function-patch-and-transform
+    input:
+      apiVersion: pt.fn.crossplane.io/v1beta1
+      kind: Resources
+      resources:
+      - name: deployment
+        base:
+          apiVersion: apps/v1
+          kind: Deployment
+          spec:
+            replicas: 2
+            template:
+              spec:
+                containers:
+                - name: app
+                  ports:
+                  - containerPort: 80
         patches:
-          - type: Merge
-            fromFieldPath: spec.overrides.tempoValues
-            toFieldPath: spec.forProvider.values
-            policy:
-              fromFieldPath: Optional
-            matchResources:
-              byName:
-                name: tempo
-          - type: Merge
-            fromFieldPath: spec.overrides.lokiValues
-            toFieldPath: spec.forProvider.values
-            policy:
-              fromFieldPath: Optional
-            matchResources:
-              byName:
-                name: loki
-          - type: Merge
-            fromFieldPath: spec.overrides.mimirValues
-            toFieldPath: spec.forProvider.values
-            policy:
-              fromFieldPath: Optional
-            matchResources:
-              byName:
-                name: mimir
-          - type: Merge
-            fromFieldPath: spec.overrides.grafanaValues
-            toFieldPath: spec.forProvider.values
-            policy:
-              fromFieldPath: Optional
-            matchResources:
-              byName:
-                name: grafana
-          - type: FromCompositeFieldPath
-            fromFieldPath: spec.overrides.otelCollectorConfig
-            toFieldPath: spec.forProvider.manifest.data.collector.yaml
-            policy:
-              fromFieldPath: Optional
-            matchResources:
-              byName:
-                name: otel-config
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: metadata.labels[example.crossplane.io/app]
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.selector.matchLabels[example.crossplane.io/app]
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.template.metadata.labels[example.crossplane.io/app]
+        - type: FromCompositeFieldPath
+          fromFieldPath: spec.image
+          toFieldPath: spec.template.spec.containers[0].image
+        - type: ToCompositeFieldPath
+          fromFieldPath: status.availableReplicas
+          toFieldPath: status.replicas
+        readinessChecks:
+        - type: MatchCondition
+          matchCondition:
+            type: Available
+            status: "True"
+      - name: service
+        base:
+          apiVersion: v1
+          kind: Service
+          spec:
+            ports:
+            - protocol: TCP
+              port: 8080
+              targetPort: 80
+        patches:
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: metadata.labels[example.crossplane.io/app]
+        - type: FromCompositeFieldPath
+          fromFieldPath: metadata.name
+          toFieldPath: spec.selector[example.crossplane.io/app]
+        - type: ToCompositeFieldPath
+          fromFieldPath: spec.clusterIP
+          toFieldPath: status.address
+        readinessChecks:
+        - type: NonEmpty
+          fieldPath: spec.clusterIP
+---
+apiVersion: example.crossplane.io/v1
+kind: App
+metadata:
+  namespace: default
+  name: my-app
+spec:
+  image: nginx
+
+
+  
+    # - step: render
+    #   functionRef:
+    #     name: function-go-templating
+    #   input:
+    #     apiVersion: template.fn.crossplane.io/v1beta1
+    #     kind: GoTemplate
+    #     source: Inline
+    #     inline:
+    #       template: |
+    #         apiVersion: fn.crossplane.io/v1beta1
+    #         kind: Output
+    #         spec:
+    #           resources:
+    #             - name: tempo
+    #               base:
+    #                 apiVersion: helm.crossplane.io/v1beta1
+    #                 kind: Release
+    #                 spec:
+    #                   providerConfigRef:
+    #                     name: default
+    #                   forProvider:
+    #                     chart:
+    #                       name: tempo
+    #                       repository: https://grafana.github.io/helm-charts
+    #                       version: 1.12.6
+    #                     namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                     releaseName: tempo-{{ .observed.composite.resource.spec.tenant }}
+    #                     values:
+    #                       deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
+    #                       tempo:
+    #                         extraEnvFrom:
+    #                           - secretRef:
+    #                               name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
+    #                               namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
+    #                         storage:
+    #                           trace:
+    #                             backend: s3
+    #                             s3:
+    #                               bucket: {{ .observed.composite.resource.spec.storage.tempoBucketName }}
+    #                               region: {{ .observed.composite.resource.spec.storage.region }}
+    #                               access_key: ${S3_ACCESS_KEY}
+    #                               secret_key: ${S3_SECRET_KEY}
+    #                               {{- if .observed.composite.resource.spec.storage.endpoint }}
+    #                               endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
+    #                               {{- end }}
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: loki
+    #               base:
+    #                 apiVersion: helm.crossplane.io/v1beta1
+    #                 kind: Release
+    #                 spec:
+    #                   providerConfigRef:
+    #                     name: default
+    #                   forProvider:
+    #                     chart:
+    #                       name: loki
+    #                       repository: https://grafana.github.io/helm-charts
+    #                       version: 5.40.0
+    #                     namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                     releaseName: loki-{{ .observed.composite.resource.spec.tenant }}
+    #                     values:
+    #                       global:
+    #                         extraArgs:
+    #                           - -config.expand-env=true
+    #                         extraEnvFrom:
+    #                           - secretRef:
+    #                               name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
+    #                               namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
+    #                       deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}SingleBinary{{ else }}SimpleScalable{{ end }}
+    #                       loki:
+    #                         storage:
+    #                           type: s3
+    #                           bucketNames:
+    #                             chunks: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
+    #                             ruler: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
+    #                             admin: {{ .observed.composite.resource.spec.storage.lokiBucketName }}
+    #                           s3:
+    #                             region: {{ .observed.composite.resource.spec.storage.region }}
+    #                             accessKeyId: ${S3_ACCESS_KEY}
+    #                             secretAccessKey: ${S3_SECRET_KEY}
+    #                             {{- if .observed.composite.resource.spec.storage.endpoint }}
+    #                             endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
+    #                             {{- end }}
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: mimir
+    #               base:
+    #                 apiVersion: helm.crossplane.io/v1beta1
+    #                 kind: Release
+    #                 spec:
+    #                   providerConfigRef:
+    #                     name: default
+    #                   forProvider:
+    #                     chart:
+    #                       name: mimir-distributed
+    #                       repository: https://grafana.github.io/helm-charts
+    #                       version: 5.3.0
+    #                     namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                     releaseName: mimir-{{ .observed.composite.resource.spec.tenant }}
+    #                     values:
+    #                       deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
+    #                       mimir:
+    #                         extraEnvFrom:
+    #                           - secretRef:
+    #                               name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
+    #                               namespace: {{ default .observed.composite.resource.spec.namespace .observed.composite.resource.spec.storage.credentialSecretRef.namespace }}
+    #                         storage:
+    #                           backend: s3
+    #                           s3:
+    #                             bucket_name: {{ .observed.composite.resource.spec.storage.mimirBucketName }}
+    #                             region: {{ .observed.composite.resource.spec.storage.region }}
+    #                             access_key_id: ${S3_ACCESS_KEY}
+    #                             secret_access_key: ${S3_SECRET_KEY}
+    #                             {{- if .observed.composite.resource.spec.storage.endpoint }}
+    #                             endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
+    #                             {{- end }}
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: grafana
+    #               base:
+    #                 apiVersion: helm.crossplane.io/v1beta1
+    #                 kind: Release
+    #                 spec:
+    #                   providerConfigRef:
+    #                     name: default
+    #                   forProvider:
+    #                     chart:
+    #                       name: grafana
+    #                       repository: https://grafana.github.io/helm-charts
+    #                       version: 8.5.7
+    #                     namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                     releaseName: grafana-{{ .observed.composite.resource.spec.tenant }}
+    #                     values:
+    #                       adminUser: admin
+    #                       adminPassword: admin
+    #                       service:
+    #                         type: ClusterIP
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: otel-config
+    #               base:
+    #                 apiVersion: kubernetes.crossplane.io/v1alpha2
+    #                 kind: Object
+    #                 spec:
+    #                   forProvider:
+    #                     manifest:
+    #                       apiVersion: v1
+    #                       kind: ConfigMap
+    #                       metadata:
+    #                         name: otel-collector
+    #                         namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                       data:
+    #                         collector.yaml: |
+    #                           {{- if .observed.composite.resource.spec.overrides.otelCollectorConfig }}
+    #                           {{ .observed.composite.resource.spec.overrides.otelCollectorConfig | nindent 30 }}
+    #                           {{- else }}
+    #                           receivers:
+    #                             otlp:
+    #                               protocols:
+    #                                 grpc:
+    #                                   endpoint: 0.0.0.0:4317
+    #                                 http:
+    #                                   endpoint: 0.0.0.0:4318
+    #                           exporters:
+    #                             otlp/tempo:
+    #                               endpoint: {{ printf "tempo-%s-distributor.%s.svc.cluster.local:4317" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
+    #                               tls:
+    #                                 insecure: true
+    #                             loki:
+    #                               endpoint: {{ printf "http://loki-%s.%s.svc.cluster.local:3100/loki/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
+    #                             prometheusremotewrite:
+    #                               endpoint: {{ printf "http://mimir-%s-distributor.%s.svc.cluster.local:8080/api/v1/push" .observed.composite.resource.spec.tenant .observed.composite.resource.spec.namespace }}
+    #                               tls:
+    #                                 insecure: true
+    #                           service:
+    #                             pipelines:
+    #                               traces:
+    #                                 receivers: [otlp]
+    #                                 exporters: [otlp/tempo]
+    #                               logs:
+    #                                 receivers: [otlp]
+    #                                 exporters: [loki]
+    #                               metrics:
+    #                                 receivers: [otlp]
+    #                                 exporters: [prometheusremotewrite]
+    #                           {{- end }}
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: otel-deployment
+    #               base:
+    #                 apiVersion: kubernetes.crossplane.io/v1alpha2
+    #                 kind: Object
+    #                 spec:
+    #                   forProvider:
+    #                     manifest:
+    #                       apiVersion: apps/v1
+    #                       kind: Deployment
+    #                       metadata:
+    #                         name: otel-collector
+    #                         namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                         labels:
+    #                           app: otel-collector
+    #                       spec:
+    #                         replicas: 1
+    #                         selector:
+    #                           matchLabels:
+    #                             app: otel-collector
+    #                         template:
+    #                           metadata:
+    #                             labels:
+    #                               app: otel-collector
+    #                           spec:
+    #                             serviceAccountName: default
+    #                             containers:
+    #                               - name: otel-collector
+    #                                 image: otel/opentelemetry-collector-contrib:0.97.0
+    #                                 args: ["--config=/etc/otelcol/collector.yaml"]
+    #                                 ports:
+    #                                   - name: otlp-grpc
+    #                                     containerPort: 4317
+    #                                   - name: otlp-http
+    #                                     containerPort: 4318
+    #                                 volumeMounts:
+    #                                   - name: config
+    #                                     mountPath: /etc/otelcol
+    #                             volumes:
+    #                               - name: config
+    #                                 configMap:
+    #                                   name: otel-collector
+    #               readinessChecks:
+    #                 - type: None
+    #             - name: otel-service
+    #               base:
+    #                 apiVersion: kubernetes.crossplane.io/v1alpha2
+    #                 kind: Object
+    #                 spec:
+    #                   forProvider:
+    #                     manifest:
+    #                       apiVersion: v1
+    #                       kind: Service
+    #                       metadata:
+    #                         name: otel-collector
+    #                         namespace: {{ .observed.composite.resource.spec.namespace }}
+    #                         labels:
+    #                           app: otel-collector
+    #                       spec:
+    #                         type: ClusterIP
+    #                         selector:
+    #                           app: otel-collector
+    #                         ports:
+    #                           - name: otlp-grpc
+    #                             port: 4317
+    #                             targetPort: 4317
+    #                           - name: otlp-http
+    #                             port: 4318
+    #                             targetPort: 4318
+    #               readinessChecks:
+    #                 - type: None
+    # - step: apply-overrides
+    #   functionRef:
+    #     name: function-patch-and-transform
+    #   input:
+    #     apiVersion: fn.crossplane.io/v1beta1
+    #     kind: Patches
+    #     patches:
+    #       - type: Merge
+    #         fromFieldPath: spec.overrides.tempoValues
+    #         toFieldPath: spec.forProvider.values
+    #         policy:
+    #           fromFieldPath: Optional
+    #         matchResources:
+    #           byName:
+    #             name: tempo
+    #       - type: Merge
+    #         fromFieldPath: spec.overrides.lokiValues
+    #         toFieldPath: spec.forProvider.values
+    #         policy:
+    #           fromFieldPath: Optional
+    #         matchResources:
+    #           byName:
+    #             name: loki
+    #       - type: Merge
+    #         fromFieldPath: spec.overrides.mimirValues
+    #         toFieldPath: spec.forProvider.values
+    #         policy:
+    #           fromFieldPath: Optional
+    #         matchResources:
+    #           byName:
+    #             name: mimir
+    #       - type: Merge
+    #         fromFieldPath: spec.overrides.grafanaValues
+    #         toFieldPath: spec.forProvider.values
+    #         policy:
+    #           fromFieldPath: Optional
+    #         matchResources:
+    #           byName:
+    #             name: grafana
+    #       - type: FromCompositeFieldPath
+    #         fromFieldPath: spec.overrides.otelCollectorConfig
+    #         toFieldPath: spec.forProvider.manifest.data.collector.yaml
+    #         policy:
+    #           fromFieldPath: Optional
+    #         matchResources:
+    #           byName:
+    #             name: otel-config

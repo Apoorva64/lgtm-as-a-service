@@ -1,110 +1,110 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: CompositeResourceDefinition
 metadata:
-  name: telemetrypipelines.telemetry.yourorg.io
+  name: telemetrypipelines.example.crossplane.io
 spec:
   scope: Namespaced
-  group: telemetry.yourorg.io
+  group: example.crossplane.io
   names:
     kind: TelemetryPipeline
     plural: telemetrypipelines
   versions:
-    - name: v1alpha1
-      served: true
-      referenceable: true
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            spec:
-              type: object
-              properties:
-                mode:
-                  type: object
-                  properties:
-                    monolithic:
-                      type: boolean
-                      default: true
-                tenant:
-                  type: string
-                namespace:
-                  type: string
-                  description: Kubernetes namespace to place the collector and service.
-                signals:
-                  type: object
-                  properties:
-                    traces:
-                      type: boolean
-                      default: true
-                    logs:
-                      type: boolean
-                      default: true
-                    metrics:
-                      type: boolean
-                      default: true
-                storage:
-                  type: object
-                  properties:
-                    tempoBucketName:
-                      type: string
-                    lokiBucketName:
-                      type: string
-                    mimirBucketName:
-                      type: string
-                    region:
-                      type: string
-                    endpoint:
-                      type: string
-                    credentialSecretRef:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        namespace:
-                          type: string
-                        access_key:
-                          type: string
-                          description: Secret key containing the storage access key.
-                        secret_key:
-                          type: string
-                          description: Secret key containing the storage secret key.
-                overrides:
-                  type: object
-                  properties:
-                    tempoValues:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    lokiValues:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    mimirValues:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    grafanaValues:
-                      type: object
-                      x-kubernetes-preserve-unknown-fields: true
-                    otelCollectorConfig:
-                      type: string
-                ingress:
-                  type: object
-                  properties:
-                    public:
-                      type: boolean
-                      default: false
-                    host:
-                      type: string
-              required:
-                - tenant
-                - namespace
-              additionalProperties: false
-            status:
-              type: object
-              properties:
-                endpoint:
-                  type: string
-                grpcPort:
-                  type: integer
-                httpPort:
-                  type: integer
-          required:
-            - spec
+  - name: v1
+    served: true
+    referenceable: true
+    schema:
+      openAPIV3Schema:
+        type: object
+        properties:
+          spec:
+            type: object
+            properties:
+              mode:
+                type: object
+                properties:
+                  monolithic:
+                    type: boolean
+                    default: true
+              tenant:
+                type: string
+              namespace:
+                type: string
+                description: Kubernetes namespace to place the collector and service.
+              signals:
+                type: object
+                properties:
+                  traces:
+                    type: boolean
+                    default: true
+                  logs:
+                    type: boolean
+                    default: true
+                  metrics:
+                    type: boolean
+                    default: true
+              storage:
+                type: object
+                properties:
+                  tempoBucketName:
+                    type: string
+                  lokiBucketName:
+                    type: string
+                  mimirBucketName:
+                    type: string
+                  region:
+                    type: string
+                  endpoint:
+                    type: string
+                  credentialSecretRef:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      namespace:
+                        type: string
+                      access_key:
+                        type: string
+                        description: Secret key containing the storage access key.
+                      secret_key:
+                        type: string
+                        description: Secret key containing the storage secret key.
+              overrides:
+                type: object
+                properties:
+                  tempoValues:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  lokiValues:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  mimirValues:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  grafanaValues:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+                  otelCollectorConfig:
+                    type: string
+              ingress:
+                type: object
+                properties:
+                  public:
+                    type: boolean
+                    default: false
+                  host:
+                    type: string
+            required:
+              - tenant
+              - namespace
+            additionalProperties: false
+          status:
+            type: object
+            properties:
+              endpoint:
+                type: string
+              grpcPort:
+                type: integer
+              httpPort:
+                type: integer
+        required:
+          - spec
