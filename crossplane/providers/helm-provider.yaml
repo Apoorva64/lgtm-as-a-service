@@ -1,0 +1,16 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: crossplane-provider-helm
+spec:
+  package: xpkg.upbound.io/crossplane-contrib/provider-helm:v1.0.4
+  revisionActivationPolicy: Automatic
+  revisionHistoryLimit: 1
+---
+apiVersion: helm.crossplane.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: helm-provider-cluster
+spec:
+  credentials:
+    source: InjectedIdentity
