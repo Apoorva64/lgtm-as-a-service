@@ -207,74 +207,56 @@ spec:
                             exporters: [prometheusremotewrite]
                       {{- end }}
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha2
-            kind: Object
+            apiVersion: apps/v1
+            kind: Deployment
             metadata:
-              name: otel-deployment-{{ .observed.composite.resource.spec.tenant }}
-              annotations:
-                gotemplating.fn.crossplane.io/composition-resource-name: otel-deployment
+              name: otel-collector
+              namespace: {{ .observed.composite.resource.spec.namespace }}
+              labels:
+                app: otel-collector
             spec:
-              forProvider:
-                manifest:
-                  apiVersion: apps/v1
-                  kind: Deployment
-                  metadata:
-                    name: otel-collector
-                    namespace: {{ .observed.composite.resource.spec.namespace }}
-                    labels:
-                      app: otel-collector
-                  spec:
-                    replicas: 1
-                    selector:
-                      matchLabels:
-                        app: otel-collector
-                    template:
-                      metadata:
-                        labels:
-                          app: otel-collector
-                      spec:
-                        serviceAccountName: default
-                        containers:
-                          - name: otel-collector
-                            image: otel/opentelemetry-collector-contrib:0.97.0
-                            args: ["--config=/etc/otelcol/collector.yaml"]
-                            ports:
-                              - name: otlp-grpc
-                                containerPort: 4317
-                              - name: otlp-http
-                                containerPort: 4318
-                            volumeMounts:
-                              - name: config
-                                mountPath: /etc/otelcol
-                        volumes:
-                          - name: config
-                            configMap:
-                              name: otel-collector
+              replicas: 1
+              selector:
+                matchLabels:
+                  app: otel-collector
+              template:
+                metadata:
+                  labels:
+                    app: otel-collector
+                spec:
+                  serviceAccountName: default
+                  containers:
+                    - name: otel-collector
+                      image: otel/opentelemetry-collector-contrib:0.97.0
+                      args: ["--config=/etc/otelcol/collector.yaml"]
+                      ports:
+                        - name: otlp-grpc
+                          containerPort: 4317
+                        - name: otlp-http
+                          containerPort: 4318
+                      volumeMounts:
+                        - name: config
+                          mountPath: /etc/otelcol
+                  volumes:
+                    - name: config
+                      configMap:
+                        name: otel-collector
             ---
-            apiVersion: kubernetes.crossplane.io/v1alpha2
-            kind: Object
+            apiVersion: v1
+            kind: Service
             metadata:
-              name: otel-service-{{ .observed.composite.resource.spec.tenant }}
-              annotations:
-                gotemplating.fn.crossplane.io/composition-resource-name: otel-service
+              name: otel-collector
+              namespace: {{ .observed.composite.resource.spec.namespace }}
+              labels:
+                app: otel-collector
             spec:
-              forProvider:
-                manifest:
-                  apiVersion: v1
-                  kind: Service
-                  metadata:
-                    name: otel-collector
-                    namespace: {{ .observed.composite.resource.spec.namespace }}
-                    labels:
-                      app: otel-collector
-                  spec:
-                    type: ClusterIP
-                    selector:
-                      app: otel-collector
-                    ports:
-                      - name: otlp-grpc
-                        port: 4317
-                        targetPort: 4317
-                      - name: otlp-http
-                        port: 4318
-                        targetPort: 4318
+              type: ClusterIP
+              selector:
+                app: otel-collector
+              ports:
+                - name: otlp-grpc
+                  port: 4317
+                  targetPort: 4317
+                - name: otlp-http
+                  port: 4318
+                  targetPort: 4318
