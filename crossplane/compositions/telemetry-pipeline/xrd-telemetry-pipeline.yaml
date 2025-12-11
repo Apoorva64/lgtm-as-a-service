@@ -8,10 +8,6 @@ spec:
   names:
     kind: TelemetryPipeline
     plural: telemetrypipelines
-  connectionSecretKeys:
-    - endpoint
-    - grpcPort
-    - httpPort
   versions:
     - name: v1alpha1
       served: true
