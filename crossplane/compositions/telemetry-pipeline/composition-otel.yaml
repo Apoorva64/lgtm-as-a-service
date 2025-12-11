@@ -1,12 +1,12 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: xtelemetrypipelines.telemetry.yourorg.io
+  name: telemetrypipelines.telemetry.yourorg.io
 spec:
   mode: Pipeline
   compositeTypeRef:
     apiVersion: telemetry.yourorg.io/v1alpha1
-    kind: XTelemetryPipeline
+    kind: TelemetryPipeline
   writeConnectionSecretsToNamespace: crossplane-system
   pipeline:
     - step: render
