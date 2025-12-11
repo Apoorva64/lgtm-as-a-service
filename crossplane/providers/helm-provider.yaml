@@ -31,12 +31,12 @@ roleRef:
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
 ---
-# apiVersion: helm.crossplane.io/v1beta1
-# kind: ClusterProviderConfig
-# metadata:
-#   name: helm-provider-cluster
-#   annotations:
-#     argocd.argoproj.io/sync-wave: "1"
-# spec:
-#   credentials:
-#     source: InjectedIdentity
+apiVersion: helm.crossplane.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  credentials:
+    source: InjectedIdentity
