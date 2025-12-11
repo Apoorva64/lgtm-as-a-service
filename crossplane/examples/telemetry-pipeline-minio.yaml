@@ -17,7 +17,7 @@ stringData:
   S3_ACCESS_KEY: "Jau7yiFYCl4TRQsBWL6j"
   S3_SECRET_KEY: "iDQmHEkGUpfjqy9uPhCV0FIZaJvW61cKxbrNTSL8"
 ---
-apiVersion: telemetry.yourorg.io/v1alpha1
+apiVersion: example.crossplane.io/v1
 kind: TelemetryPipeline
 metadata:
   name: demo-pipeline-minio

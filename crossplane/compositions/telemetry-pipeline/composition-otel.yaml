@@ -4,7 +4,7 @@ metadata:
   name: telemetrypipelines-otel-deployment
 spec:
   compositeTypeRef:
-    apiVersion: telemetrypipelines.example.crossplane.io/v1
+    apiVersion: example.crossplane.io/v1
     kind: TelemetryPipeline
   mode: Pipeline
   pipeline: 
@@ -70,14 +70,6 @@ spec:
         readinessChecks:
         - type: NonEmpty
           fieldPath: spec.clusterIP
----
-apiVersion: example.crossplane.io/v1
-kind: App
-metadata:
-  namespace: default
-  name: my-app
-spec:
-  image: nginx
 
 
   

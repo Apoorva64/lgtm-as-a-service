@@ -8,7 +8,7 @@ stringData:
   S3_ACCESS_KEY: "<ACCESS_KEY>"
   S3_SECRET_KEY: "<SECRET_KEY>"
 ---
-apiVersion: telemetry.yourorg.io/v1alpha1
+apiVersion: example.crossplane.io/v1
 kind: TelemetryPipeline
 metadata:
   name: demo-pipeline
