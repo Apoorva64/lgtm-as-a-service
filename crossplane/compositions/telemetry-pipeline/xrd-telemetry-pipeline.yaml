@@ -61,6 +61,19 @@ spec:
                       type: string
                     endpoint:
                       type: string
+                    credentialSecretRef:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                        namespace:
+                          type: string
+                        access_key:
+                          type: string
+                          description: Secret key containing the storage access key.
+                        secret_key:
+                          type: string
+                          description: Secret key containing the storage secret key.
                 overrides:
                   type: object
                   properties:

@@ -1,0 +1,50 @@
+# Secret with MinIO chart values for credentials (placeholders)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: minio-rustfs-credentials
+  namespace: tenant-2
+stringData:
+  S3_ACCESS_KEY: "<MINIO_ACCESS_KEY>"
+  S3_SECRET_KEY: "<MINIO_SECRET_KEY>"
+---
+apiVersion: telemetry.yourorg.io/v1alpha1
+kind: TelemetryPipeline
+metadata:
+  name: demo-pipeline-minio
+spec:
+  tenant: demo
+  namespace: tenant-2
+  signals:
+    traces: true
+    logs: true
+    metrics: true
+  storage:
+    region: us-east-1
+    endpoint: http://rustfs.rustfs.svc.cluster.local:9000
+    tempoBucketName: tempo-bucket
+    lokiBucketName: loki-bucket
+    mimirBucketName: mimir-bucket
+    credentialSecretRef:
+      name: minio-rustfs-credentials
+      namespace: tenant-2
+      access_key: S3_ACCESS_KEY
+      secret_key: S3_SECRET_KEY
+  overrides:
+    grafanaValues:
+      service:
+        type: ClusterIP
+    # Optional: override collector config if you need different pipelines
+    # otelCollectorConfig: |
+    #   receivers:
+    #     otlp:
+    #       protocols:
+    #         grpc:
+    #         http:
+    #   exporters:
+    #     logging: {}
+    #   service:
+    #     pipelines:
+    #       traces:
+    #         receivers: [otlp]
+    #         exporters: [logging]
