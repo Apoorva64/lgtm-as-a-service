@@ -26,9 +26,6 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: tempo
             spec:
-              providerConfigRef:
-                name: helm-provider-cluster
-                kind: ClusterProviderConfig
               forProvider:
                 chart:
                   name: tempo
@@ -62,9 +59,6 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: loki
             spec:
-              providerConfigRef:
-                name: helm-provider-cluster
-                kind: ClusterProviderConfig
               forProvider:
                 chart:
                   name: loki
@@ -103,9 +97,6 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: mimir
             spec:
-              providerConfigRef:
-                name: helm-provider-cluster
-                kind: ClusterProviderConfig
               forProvider:
                 chart:
                   name: mimir-distributed
@@ -138,9 +129,6 @@ spec:
               annotations:
                 gotemplating.fn.crossplane.io/composition-resource-name: grafana
             spec:
-              providerConfigRef:
-                name: helm-provider-cluster
-                kind: ClusterProviderConfig
               forProvider:
                 chart:
                   name: grafana
