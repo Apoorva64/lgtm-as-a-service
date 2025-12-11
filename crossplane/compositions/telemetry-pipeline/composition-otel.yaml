@@ -7,7 +7,6 @@ spec:
   compositeTypeRef:
     apiVersion: telemetry.yourorg.io/v1alpha1
     kind: TelemetryPipeline
-  writeConnectionSecretsToNamespace: crossplane-system
   pipeline:
     - step: render
       functionRef:

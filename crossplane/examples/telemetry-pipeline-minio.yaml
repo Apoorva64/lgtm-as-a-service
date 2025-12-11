@@ -21,6 +21,7 @@ apiVersion: telemetry.yourorg.io/v1alpha1
 kind: TelemetryPipeline
 metadata:
   name: demo-pipeline-minio
+  namespace: tenant-2
 spec:
   tenant: demo
   namespace: tenant-2
