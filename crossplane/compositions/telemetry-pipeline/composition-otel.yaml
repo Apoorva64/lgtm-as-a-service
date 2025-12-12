@@ -60,11 +60,20 @@ spec:
                       grpc:
                         enabled: true
                   distributor:
+                    resources: {}
                     config:
                       log_received_spans:
                         enabled: true
                       log_discarded_spans:
                         enabled: true
+                  ingester:
+                    resources: {}
+                  querier:
+                    resources: {}
+                  compactor:
+                    resources: {}
+                  ruler:
+                    resources: {}
             ---
             apiVersion: helm.m.crossplane.io/v1beta1
             kind: Release
@@ -114,10 +123,13 @@ spec:
 
                   backend:
                     replicas: 1
+                    resources: {}
                   read:
                     replicas: 1
+                    resources: {}
                   write:
                     replicas: 1
+                    resources: {}
 
                   # Enable minio for storage
                   minio:
@@ -192,6 +204,92 @@ spec:
                       ruler_storage:
                         s3:
                           bucket_name: mimir-ruler
+                  alertmanager:
+                    persistentVolume:
+                      enabled: false
+                    replicas: 1
+                    resources: {}
+
+                  compactor:
+                    resources: {}
+
+                  distributor:
+                    replicas: 1
+                    resources: {}
+
+                  ingester:
+                    replicas: 1
+                    resources: {}
+                    topologySpreadConstraints: {}
+                    affinity:
+                      podAntiAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          - labelSelector:
+                              matchExpressions:
+                                - key: app.kubernetes.io/component
+                                  operator: In
+                                  values:
+                                    - ingester
+                            topologyKey: "kubernetes.io/hostname"
+
+                    zoneAwareReplication:
+                      topologyKey: "kubernetes.io/hostname"
+
+                  chunks-cache:
+                    enabled: true
+                    replicas: 1
+
+                  index-cache:
+                    enabled: true
+                    replicas: 1
+
+                  metadata-cache:
+                    enabled: true
+                    replicas: 1
+
+                  results-cache:
+                    enabled: true
+                    replicas: 1
+
+                  minio:
+                    enabled: false
+
+                  overrides_exporter:
+                    replicas: 1
+                    resources: {}
+
+                  querier:
+                    replicas: 1
+                    resources: {}
+
+                  query_frontend:
+                    replicas: 1
+                    resources: {}
+
+                  ruler:
+                    replicas: 1
+                    resources: {}
+
+                  store_gateway:
+                    replicas: 1
+                    resources: {}
+                    topologySpreadConstraints: {}
+                    affinity:
+                      podAntiAffinity:
+                        requiredDuringSchedulingIgnoredDuringExecution:
+                          - labelSelector:
+                              matchExpressions:
+                                - key: app.kubernetes.io/component
+                                  operator: In
+                                  values:
+                                    - store-gateway
+                            topologyKey: "kubernetes.io/hostname"
+                    zoneAwareReplication:
+                      topologyKey: "kubernetes.io/hostname"
+
+                  gateway:
+                    replicas: 1
+                    resources: {}
             ---
             apiVersion: helm.m.crossplane.io/v1beta1
             kind: Release

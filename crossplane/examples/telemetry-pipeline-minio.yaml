@@ -31,7 +31,7 @@ spec:
     metrics: false
   storage:
     region: us-east-1
-    endpoint: http://rustfs.rustfs.svc.cluster.local:9000
+    endpoint: rustfs.rustfs.svc.cluster.local:9000
     tempoBucketName: tempo-bucket
     lokiBucketName: loki-bucket
     mimirBucketName: mimir-bucket
