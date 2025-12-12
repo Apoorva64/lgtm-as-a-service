@@ -221,19 +221,19 @@ spec:
                     replicas: 1
                     resources: {}
                     topologySpreadConstraints: {}
-                    affinity:
-                      podAntiAffinity:
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          - labelSelector:
-                              matchExpressions:
-                                - key: app.kubernetes.io/component
-                                  operator: In
-                                  values:
-                                    - ingester
-                            topologyKey: "kubernetes.io/hostname"
+                    # affinity:
+                    #   podAntiAffinity:
+                    #     requiredDuringSchedulingIgnoredDuringExecution:
+                    #       - labelSelector:
+                    #           matchExpressions:
+                    #             - key: app.kubernetes.io/component
+                    #               operator: In
+                    #               values:
+                    #                 - ingester
+                    #         topologyKey: "kubernetes.io/hostname"
 
-                    zoneAwareReplication:
-                      topologyKey: "kubernetes.io/hostname"
+                    # zoneAwareReplication:
+                    #   topologyKey: "kubernetes.io/hostname"
 
                   chunks-cache:
                     enabled: true
@@ -274,18 +274,18 @@ spec:
                     replicas: 1
                     resources: {}
                     topologySpreadConstraints: {}
-                    affinity:
-                      podAntiAffinity:
-                        requiredDuringSchedulingIgnoredDuringExecution:
-                          - labelSelector:
-                              matchExpressions:
-                                - key: app.kubernetes.io/component
-                                  operator: In
-                                  values:
-                                    - store-gateway
-                            topologyKey: "kubernetes.io/hostname"
-                    zoneAwareReplication:
-                      topologyKey: "kubernetes.io/hostname"
+                    # affinity:
+                    #   podAntiAffinity:
+                    #     requiredDuringSchedulingIgnoredDuringExecution:
+                    #       - labelSelector:
+                    #           matchExpressions:
+                    #             - key: app.kubernetes.io/component
+                    #               operator: In
+                    #               values:
+                    #                 - store-gateway
+                    #         topologyKey: "kubernetes.io/hostname"
+                    # zoneAwareReplication:
+                    #   topologyKey: "kubernetes.io/hostname"
 
                   gateway:
                     replicas: 1
