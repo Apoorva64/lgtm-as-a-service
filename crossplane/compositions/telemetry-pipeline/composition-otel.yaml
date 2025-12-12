@@ -32,22 +32,36 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 1.24.1
                 values:
-                  deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                  tempo:
-                    extraEnvFrom:
-                      - secretRef:
-                          name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                    storage:
-                      trace:
-                        backend: s3
-                        s3:
-                          bucket: {{ .observed.composite.resource.spec.storage.tempoBucketName }}
-                          region: {{ .observed.composite.resource.spec.storage.region }}
-                          access_key: ${S3_ACCESS_KEY}
-                          secret_key: ${S3_SECRET_KEY}
-                          {{- if .observed.composite.resource.spec.storage.endpoint }}
-                          endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                          {{- end }}
+                  global:
+                    clusterDomain: 'cluster.local'
+                  gateway:
+                    enabled: true
+                  minio:
+                    enabled: false
+                  storage:
+                    trace:
+                      backend: s3
+                      s3:
+                        access_key: ${S3_ACCESS_KEY}
+                        secret_key: ${S3_SECRET_KEY}
+                        region: {{ .observed.composite.resource.spec.storage.region }}
+                        bucket: {{ .observed.composite.resource.spec.storage.tempoBucketName }}
+                        {{- if .observed.composite.resource.spec.storage.endpoint }}
+                        endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
+                        {{- end }}
+                        insecure: true
+                  traces:
+                    otlp:
+                      http:
+                        enabled: true
+                      grpc:
+                        enabled: true
+                  distributor:
+                    config:
+                      log_received_spans:
+                        enabled: true
+                      log_discarded_spans:
+                        enabled: true
             ---
             apiVersion: helm.m.crossplane.io/v1beta1
             kind: Release
@@ -150,21 +164,31 @@ spec:
                   repository: https://grafana.github.io/helm-charts
                   version: 6.0.5
                 values:
-                  deploymentMode: {{ if .observed.composite.resource.spec.mode.monolithic }}monolithic{{ else }}distributed{{ end }}
-                  mimir:
+                  minio:
+                    enabled: false
+                  global:
                     extraEnvFrom:
                       - secretRef:
                           name: {{ .observed.composite.resource.spec.storage.credentialSecretRef.name }}
-                    storage:
-                      backend: s3
-                      s3:
-                        bucket_name: {{ .observed.composite.resource.spec.storage.mimirBucketName }}
-                        region: {{ .observed.composite.resource.spec.storage.region }}
-                        access_key_id: ${S3_ACCESS_KEY}
-                        secret_access_key: ${S3_SECRET_KEY}
-                        {{- if .observed.composite.resource.spec.storage.endpoint }}
-                        endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
-                        {{- end }}
+                  mimir:
+                    structuredConfig:
+                      common:
+                        storage:
+                          backend: s3
+                          s3:
+                            endpoint: {{ .observed.composite.resource.spec.storage.endpoint }}
+                            region: {{ .observed.composite.resource.spec.storage.region }}
+                            secret_access_key: "${S3_SECRET_KEY}" # This is a secret injected via an environment variable
+                            access_key_id: "${S3_ACCESS_KEY}" # This is a secret injected via an environment variable
+                      blocks_storage:
+                        s3:
+                          bucket_name: mimir-blocks
+                      alertmanager_storage:
+                        s3:
+                          bucket_name: mimir-alertmanager
+                      ruler_storage:
+                        s3:
+                          bucket_name: mimir-ruler
             ---
             apiVersion: helm.m.crossplane.io/v1beta1
             kind: Release

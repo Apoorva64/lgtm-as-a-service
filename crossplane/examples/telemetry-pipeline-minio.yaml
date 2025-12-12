@@ -26,9 +26,9 @@ spec:
   tenant: demo
   namespace: tenant-2
   signals:
-    traces: true
+    traces: false
     logs: true
-    metrics: true
+    metrics: false
   storage:
     region: us-east-1
     endpoint: http://rustfs.rustfs.svc.cluster.local:9000
