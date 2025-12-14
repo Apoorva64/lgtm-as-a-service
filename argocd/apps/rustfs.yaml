@@ -11,8 +11,63 @@ spec:
     targetRevision: "0.1.1"
     helm:
       values: |
+        nodeSelector:
+          kubernetes.io/hostname: node-apoorva2
         ingress:
           enabled: false
+          ## @section Data Persistence
+        dataPersistence:
+          ## @param dataPersistence.enabled Enable data persistence using Persistent Volume Claims
+          enabled: true
+          ## @param dataPersistence.storageClass Persistent Volume storage class for data
+          storageClass: "local-path"
+          ## @param dataPersistence.annotations Persistent Volume Claim annotations for data
+          annotations: {}
+          ## @param dataPersistence.size Persistent Volume size for data
+          size: 10Gi
+          ## @param dataPersistence.accessModes Persistent Volume access modes for data
+          accessModes:
+            - ReadWriteOnce
+          ## @param dataPersistence.existingClaim The name of an existing PVC to use for data persistence
+          existingClaim: ""
+          ## @param dataPersistence.mountPath The path where to mount the data volume
+          mountPath: /data
+
+        ## @section Logs Persistence
+        logsPersistence:
+          ## @param logsPersistence.enabled Enable logs persistence using Persistent Volume Claims
+          enabled: false
+          ## @param logsPersistence.storageClass Persistent Volume storage class for logs
+          storageClass: ""
+          ## @param logsPersistence.annotations Persistent Volume Claim annotations for logs
+          annotations: {}
+          ## @param logsPersistence.size Persistent Volume size for logs
+          size: 1Gi
+          ## @param logsPersistence.accessModes Persistent Volume access modes for logs
+          accessModes:
+            - ReadWriteOnce
+          ## @param logsPersistence.existingClaim The name of an existing PVC to use for logs persistence
+          existingClaim: ""
+          ## @param logsPersistence.mountPath The path where to mount the logs volume
+          mountPath: /app/logs
+
+        ## @section TLS Persistence
+        tlsPersistence:
+          ## @param tlsPersistence.enabled Enable TLS persistence using Persistent Volume Claims
+          enabled: false
+          ## @param tlsPersistence.storageClass Persistent Volume storage class for TLS
+          storageClass: ""
+          ## @param tlsPersistence.annotations Persistent Volume Claim annotations for TLS
+          annotations: {}
+          ## @param tlsPersistence.size Persistent Volume size for TLS
+          size: 100Mi
+          ## @param tlsPersistence.accessModes Persistent Volume access modes for TLS
+          accessModes:
+            - ReadWriteOnce
+          ## @param tlsPersistence.existingClaim The name of an existing PVC to use for TLS persistence
+          existingClaim: ""
+          ## @param tlsPersistence.mountPath The path where to mount the TLS volume
+          mountPath: /opt/tls
   destination:
     server: https://kubernetes.default.svc
     namespace: rustfs
